@@ -1,0 +1,61 @@
+-- What type of content (Movies/TV Shows) does Netflix contain more of? --
+SELECT "type", ROUND(CAST(COUNT(*) AS NUMERIC) * 100 / (SELECT COUNT(*) FROM "netflix_data"), 0) AS "percentage"
+FROM "netflix_data"
+GROUP BY "type";
+
+-- How much content does Netflix release every year? --
+SELECT EXTRACT(YEAR FROM "date_added") AS "year_added", COUNT(*) AS "amount_of_content"
+FROM "netflix_data"
+WHERE "date_added" IS NOT NULL
+GROUP BY "year_added"
+ORDER BY "year_added" DESC;
+
+-- Which country does Netflix release the most content in? --
+SELECT TRIM("x") AS "country", COUNT(*) AS "amount_of_content"
+FROM "netflix_data",
+UNNEST (STRING_TO_ARRAY("country", ',')) AS "x"
+WHERE "country" IS NOT NULL
+GROUP BY TRIM("x")
+ORDER BY COUNT(*) DESC;
+
+-- How much content is released in the U.S. every month? --
+SELECT EXTRACT(MONTH FROM "date_added") AS "month_added", COUNT(*) AS "amount_of_content" 
+FROM "netflix_data"
+WHERE "date_added" IS NOT NULL
+AND "country" ILIKE '%united states%'
+GROUP BY "month_added"
+ORDER BY "month_added";
+
+-- Which movie genre is the most popular in the U.S.? --
+SELECT "type", TRIM("x") AS "genre", "country", COUNT(*) AS "amount_of_content"
+FROM "netflix_data",
+UNNEST (STRING_TO_ARRAY("listed_in", ',')) AS "x"
+WHERE "type" = 'Movie'
+AND "country" = 'United States'
+GROUP BY "type", "genre", "country"
+ORDER BY "amount_of_content" DESC;
+
+--  Which TV show genre is the most popular in the U.S.? --
+SELECT "type", TRIM("x") AS "genre", "country", COUNT(*) AS "amount_of_content"
+FROM "netflix_data",
+UNNEST (STRING_TO_ARRAY("listed_in", ',')) AS "x"
+WHERE "type" = 'TV Show'
+AND "country" = 'United States'
+GROUP BY "type", "genre", "country"
+ORDER BY "amount_of_content" DESC;
+
+-- What are the most common movie lengths in the U.S.? -- 
+SELECT "type", "duration", COUNT(*)
+FROM "netflix_data"
+WHERE "type" = 'Movie'
+AND "country" = 'United States'
+GROUP BY "type", "duration"
+ORDER BY CAST(SUBSTRING("duration" FROM '^[0-9]+') AS INTEGER);
+
+-- What are the most common TV show lengths in the U.S.? --
+SELECT "type", "duration", COUNT(*)
+FROM "netflix_data"
+WHERE "type" = 'TV Show'
+AND "country" = 'United States'
+GROUP BY "type", "duration"
+ORDER BY CAST(SUBSTRING("duration" FROM '^[0-9]+') AS INTEGER);
