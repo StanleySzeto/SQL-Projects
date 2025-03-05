@@ -1,0 +1,79 @@
+CREATE TABLE "game_info" (
+	"game_id" INTEGER Primary Key, 
+	"week" VARCHAR (10),
+	"day" TEXT,
+	"date" DATE, 
+	"away_team" VARCHAR(10),
+	"away" VARCHAR(3),
+	"home_team" VARCHAR(10),
+	"home" VARCHAR(3)
+);
+
+CREATE TABLE "betting_info"(
+	"game_id" INTEGER Primary Key,
+	"away_score" INTEGER,
+	"home_score" INTEGER,
+	"box_score_away" INTEGER[],
+	"box_score_home" INTEGER[],
+	"total_point" INTEGER,
+	"fav_team" VARCHAR(3), 
+	"spread" NUMERIC(5,1),
+	"fav_covered" VARCHAR(11),
+	"game_winner" VARCHAR(10),
+	"game_loser" VARCHAR(10),
+	"o/u" NUMERIC(5,1),
+	"over" BOOLEAN,
+	"under" BOOLEAN,
+	"home_off_yards" INTEGER,
+	"away_off_yards" INTEGER
+);
+
+CREATE TABLE "teams"(
+	"id" INTEGER PRIMARY KEY, 
+	"team_city" VARCHAR(3),
+	"team_name" VARCHAR(10)
+);
+-- Joined Datasets -- 
+SELECT * FROM "game_info"
+NATURAL JOIN "betting_info";
+
+-- Average points scored at home games vs away games --
+SELECT ROUND(AVG("home_score"), 0) AS "avg_home_score", ROUND(AVG("away_score"), 0) AS "avg_away_score"
+FROM "betting_info";
+
+-- Percentage of games where the home team were the favorites --
+SELECT ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM "betting_info"), 2)
+FROM "betting_info" 
+NATURAL JOIN "game_info" 
+WHERE "home" = "fav_team";
+
+-- Percentage of games where the home team wins --
+SELECT ROUND(COUNT(*) * 100.0 / (SELECT COUNT (*) FROM "betting_info"), 2) AS "home_win_percentage"
+FROM "betting_info"
+NATURAL JOIN "game_info"
+WHERE "home_team" = "game_winner";
+
+-- Percentage of games where the home team were favorites and they covered the spread --
+SELECT "fav_covered", ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM "betting_info"), 2)
+FROM "betting_info" 
+NATURAL JOIN "game_info" 
+WHERE "home" = "fav_team"
+GROUP BY "fav_covered"
+ORDER BY "fav_covered";
+
+-- Percentage of games where the favorites cover their spread --
+SELECT "fav_covered", ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM "betting_info"), 2) AS "spread_covered"
+FROM "betting_info"
+GROUP BY "fav_covered"
+ORDER BY "fav_covered";
+
+-- Percentage of games that covered the over --
+SELECT "over" , ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM "betting_info"), 2) AS "over_percentage"
+FROM "betting_info"
+GROUP BY "over"
+ORDER BY "over" DESC;
+
+-- Percentage of games where the favorites won the game --
+SELECT ROUND((SELECT COUNT(*) FROM "betting_info"
+JOIN "teams" ON "fav_team" = "team_city"
+WHERE "team_name" = "game_winner") * 100.0 / (SELECT COUNT(*) FROM "betting_info"), 2) AS "fav_win_percentage";
